@@ -1,22 +1,23 @@
 import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native'
-import React, { ReactElement, useEffect } from 'react'
+import React, { ReactElement, useContext, useEffect } from 'react'
 import { useState, useRef } from 'react'
+import { useNavigation } from '@react-navigation/native'
 import Line from '../../components/Line/Line'
 import LModal from './components/LModal'
 import { hp } from '../../utils/utils'
 import { theme } from '../../constansts/theme'
+import { setConfig, store } from '../../redux/redux'
 import storage from '../../utils/storage'
 import { CONFIG_STORAGE_KEY } from '../../constansts/config'
-import { store } from '../../redux/redux'
-import { setStoreIp, setStoreAuth } from '../../redux/redux'
+import { ConfigContext } from '../../context/ConfigContext'
 
-const ipConfig = () => {
-    const [ip, setIp] = useState('')
-    const ipStorageRef = useRef('')
+const ipConfig = (props: string) => {
+    const { config, setConfig } = useContext(ConfigContext)!
+    const [ip, setIp] = useState(config.ip)
+    const [ipInfo, setIpInfo] = useState('')
     const [ipConfigVisble, setIpConfigVisible] = useState(false)
-    let config = store.getState()
     useEffect(() => {
-        loadStorage()
+        setIpInfo(ip ? `http://${ip}` : '点击输入服务器地址及端口')
     }, [])
     const onOpenIpConfig = () => {
         setIpConfigVisible(true)
@@ -25,34 +26,28 @@ const ipConfig = () => {
         setIpConfigVisible(false)
         return null
     }
+    const handleSetIpInfo = () => {
+        setIpInfo(ip ? `http://${ip}` : '点击输入服务器地址及端口')
+    }
     const onComfireIpConfig = () => {
-        console.log('xxxxx', config)
         storage.save({
             key: CONFIG_STORAGE_KEY,
             data: {
                 ...config,
-                ip: ipStorageRef.current
+                ip
             }
+        }).then(() => {
+            setConfig({ ...config, ip })
         })
-        setIp(ipStorageRef.current)
-        store.dispatch(setStoreIp(ipStorageRef.current))
+        handleSetIpInfo()
         onCloseIpConfig()
     }
-    const loadStorage = () => {
-        storage.load({
-            key: CONFIG_STORAGE_KEY,
-            autoSync: true
-        }).then(res => {
-            if (res.ip) {
-                setIp(res.ip)
-            }
-        })
-    }
     const changeIpConfig = (value: string) => {
-        ipStorageRef.current = value
+        setIp(value)
     }
     return {
         ip,
+        ipInfo,
         ipConfigVisble,
         changeIpConfig,
         onOpenIpConfig,
@@ -61,26 +56,19 @@ const ipConfig = () => {
     }
 }
 const authConfig = () => {
-    const [auth, setAuth] = useState('')
-    const authStorageRef = useRef('')
+    const { config, setConfig } = useContext(ConfigContext)!
+    const [auth, setAuth] = useState(config.auth)
+    const [authInfo, setAuthInfo] = useState('')
     const [authConfigVisible, setAuthConfigVisible] = useState(false)
-    let config = store.getState()
     useEffect(() => {
-        loadStorage()
+        handleSetAuth()
     }, [])
-    const loadStorage = () => {
 
-        storage.load({
-            key: CONFIG_STORAGE_KEY,
-            autoSync: true
-        }).then(res => {
-            if (res.auth) {
-                setAuth(res.auth)
-            }
-        })
+    const handleSetAuth = () => {
+        setAuthInfo(auth ? auth : '点击输入密钥')
     }
     const changeAuthConfig = (value: string) => {
-        authStorageRef.current = value
+        setAuth(value)
     }
     const onOpenAuthConfig = () => {
         setAuthConfigVisible(true)
@@ -89,19 +77,20 @@ const authConfig = () => {
         setAuthConfigVisible(false)
     }
     const onComfireAuthConfig = () => {
+        let config = { ...store.getState() }
+        config.auth = auth
         storage.save({
             key: CONFIG_STORAGE_KEY,
-            data: {
-                ...config,
-                auth: authStorageRef.current
-            }
+            data: config
+        }).then(() => {
+            store.dispatch(setConfig(config))
         })
-        store.dispatch(setStoreAuth(authStorageRef.current))
-        setAuth(authStorageRef.current)
+        handleSetAuth()
         onCloseAuthConfig()
     }
     return {
         auth,
+        authInfo,
         authConfigVisible,
         onOpenAuthConfig,
         onCloseAuthConfig,
@@ -110,8 +99,9 @@ const authConfig = () => {
     }
 }
 const Config = () => {
-    const { onCloseIpConfig, onOpenIpConfig, onComfireIpConfig, changeIpConfig, ipConfigVisble, ip } = ipConfig()
-    const { auth, authConfigVisible, onOpenAuthConfig, onCloseAuthConfig, onComfireAuthConfig, changeAuthConfig } = authConfig()
+    const navigation = useNavigation();
+    const { onCloseIpConfig, onOpenIpConfig, onComfireIpConfig, changeIpConfig, ipConfigVisble, ip, ipInfo } = ipConfig()
+    const { auth, authInfo, authConfigVisible, onOpenAuthConfig, onCloseAuthConfig, onComfireAuthConfig, changeAuthConfig } = authConfig()
     return (
         <View>
             <View style={styles.header}>
@@ -120,7 +110,7 @@ const Config = () => {
             <View style={styles.item} >
                 <TouchableOpacity onPress={onOpenIpConfig}>
                     <Text style={styles.title}>服务器地址</Text>
-                    <Text style={styles.info}>{ip ? `http://${ip}` : '点击设置ip地址'}</Text>
+                    <Text style={styles.info}>{ipInfo}</Text>
                 </TouchableOpacity>
             </View>
             <View style={{ marginTop: 10 }}>
@@ -129,7 +119,7 @@ const Config = () => {
             <View style={styles.item} >
                 <TouchableOpacity onPress={onOpenAuthConfig}>
                     <Text style={styles.title}>API密钥</Text>
-                    <Text style={styles.info}>{auth ? `${auth}` : '点击设置api密钥'}</Text>
+                    <Text style={styles.info}>{authInfo}</Text>
                 </TouchableOpacity>
             </View>
             <View style={{ marginTop: 10 }}>
@@ -138,7 +128,7 @@ const Config = () => {
             <LModal visible={ipConfigVisble} onClose={onCloseIpConfig}>
                 <View>
                     <Text >服务器地址</Text>
-                    <TextInput defaultValue={ip} onChangeText={value => { changeIpConfig(value) }} placeholder='请输入服务器地址以及端口' style={styles.input} ></TextInput>
+                    <TextInput value={ip} onChangeText={value => { changeIpConfig(value) }} placeholder='请输入服务器地址以及端口' style={styles.input} ></TextInput>
                     <View style={styles.footer}>
                         <TouchableOpacity onPress={onCloseIpConfig}>
                             <Text style={styles.cancle}>取消</Text>
@@ -152,7 +142,7 @@ const Config = () => {
             <LModal visible={authConfigVisible} onClose={onCloseAuthConfig}>
                 <View>
                     <Text >API密钥</Text>
-                    <TextInput defaultValue={auth} onChangeText={value => { changeAuthConfig(value) }} placeholder='请输入API密钥' style={styles.input} ></TextInput>
+                    <TextInput value={auth} onChangeText={value => { changeAuthConfig(value) }} placeholder='请输入API密钥' style={styles.input} ></TextInput>
                     <View style={styles.footer}>
                         <TouchableOpacity onPress={onCloseAuthConfig}>
                             <Text style={styles.cancle}>取消</Text>

@@ -1,8 +1,9 @@
 import { View, Text, StatusBar, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useRef } from 'react';
 import { TextInputChangeEventData } from 'react-native';
 import { NavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
+
 import api from '../../api'
 import { theme } from '../../constansts/theme';
 import ComicCard from './components/ComicCard/ComicCard';
@@ -11,17 +12,23 @@ import Loading from './components/Loading/Loading';
 import Empty from './components/Empty/Empty';
 import { LAN_URL } from '../../constansts/config';
 import { formatSize, hp, wp } from '../../utils/utils';
-import { store } from '../../redux/redux';
+import { store, setConfig } from '../../redux/redux';
+import { CONFIG_STORAGE_KEY } from '../../constansts/config.ts'
+import storage from '../../utils/storage';
+import { config, ConfigContext } from '../../context/ConfigContext.tsx';
 
 
 const Home = () => {
-
   const nav = useNavigation<NavigationProp<RootStackParamList>>()
   const isPageEnd = useRef(false)
   const filter = useRef('')
-  const start = useRef(0)
-  const [test, setText] = useState()
+  const startRef = useRef(0)
+  const [error, setError] = useState<any>('')
+  const { config, setConfig } = useContext(ConfigContext)!
+  const preConfigRef = useRef<IConfig>({ ip: '', auth: '' })
   const [showList, setShowList] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [comicList, setComicList] = useState<Comic[]>([])
   const handleComicList = (comicList: Comic[]): Comic[] => {
     if (!Array.isArray(comicList) || comicList.length == 0) return []
@@ -34,30 +41,54 @@ const Home = () => {
       }
     })
   }
+
+  const InitSearch = () => {
+    setHasMore(true)
+    setLoading(false)
+    filter.current = ''
+    startRef.current = 0
+  }
+
   const handleSearch = ({ nativeEvent }: { nativeEvent: TextInputChangeEventData }) => {
     console.log('开始搜索', nativeEvent.text)
-    start.current = 0
+    setHasMore(true)
+    startRef.current = 0
     filter.current = nativeEvent.text
     setComicList([])
-    // fetchComicList(filter.current)
   }
 
   const handleEndReached = async () => {
+    console.log('handleEndReached')
+    if (!hasMore) return false
+    if (loading) return false
     try {
-      await fetchComicList(filter.current, start.current)
-      start.current = start.current + 100
+      await fetchComicList(filter.current, startRef.current)
     } catch (e) {
+      console.log('handelEnd-----')
+      setError(e)
     }
-
   }
 
-  const fetchComicList = async (filter: string = '', start: number = 0, refresh = false) => {
-    console.log('fetchComic', filter, start)
-    const res = await api.fetchSearch(filter, start)
-    console.log('length', res.data.length)
-    const temp = handleComicList(res.data)
-    isPageEnd.current = (start + temp.length) >= res.recordsFiltered
-    setComicList([...comicList, ...temp])
+  const fetchComicList = async (filter: string = '', start: number = 0) => {
+    try {
+      console.log('fetchComic', filter, start)
+      setLoading(true)
+      const res = await api.fetchSearch(filter, start)
+      console.log('fetchComic', res.data)
+      const temp = handleComicList(res.data)
+      isPageEnd.current = (start + temp.length) >= res.recordsFiltered
+      console.log('isPageEnd', isPageEnd)
+      isPageEnd.current ? setHasMore(false) : setHasMore(true)
+      startRef.current = startRef.current + 100
+      setComicList([...comicList, ...temp])
+    } catch (e) {
+      console.log('xxxxx', e)
+      setHasMore(false)
+      setComicList([])
+    } finally {
+      setLoading(false)
+    }
+
   }
 
   const handelComicPress = (comic: Comic) => {
@@ -72,26 +103,26 @@ const Home = () => {
   }
 
   useEffect(() => {
-    filter.current = ''
-    start.current = 0
-    if (showList) {
-      handleEndReached()
-      setText(store.getState())
+    console.log('first useEffect')
+    storage.load({
+      key: CONFIG_STORAGE_KEY,
+    }).then(res => {
+      console.log('res', res)
+      setConfig(res)
+    })
+  }, [])
+
+  useEffect(() => {
+    config?.ip ? setShowList(true) : setShowList(false)
+    if (!config.ip) return
+    console.log('preConfigRef', preConfigRef.current)
+    if (preConfigRef.current.ip !== config.ip || preConfigRef.current.auth !== config.auth) {
+      console.log('config change')
+      InitSearch()
+      fetchComicList()
     }
-  }, [showList])
-
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log('useEffect------------')
-      store.getState().ip ? setShowList(true) : setShowList(false)
-      filter.current = ''
-      start.current = 0
-      return () => {
-        console.log('out')
-      };
-    }, [])
-  );
-
+    preConfigRef.current = config
+  }, [config])
 
   return (
     <View style={styles.container}>
@@ -124,10 +155,11 @@ const Home = () => {
           keyExtractor={item => item.arcid}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0}
-          ListFooterComponent={(
-            < View style={{ marginVertical: comicList.length === 0 ? 200 : 4 }}>
+          ListEmptyComponent={() => (<View style={{ height: hp(82), width: '100%', justifyContent: 'center', alignItems: 'center' }}>{!loading && <Text style={{ color: theme.colors.primary }}>数据为空</Text>}</View>)}
+          ListFooterComponent={() => (
+            loading && hasMore && < View style={{ marginVertical: comicList.length === 0 ? 200 : 4 }}>
               {!isPageEnd.current && <Loading loadingText='加载中'></Loading>}
-              {isPageEnd.current && <View style={{ flex: 1 }}><Empty></Empty></View>}
+
             </View>
           )}
         />

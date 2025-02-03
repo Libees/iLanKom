@@ -7,7 +7,6 @@ import { hp, wp, formatTimeStamp, parseKeyValueString, formatSize } from '../../
 import { theme } from '../../constansts/theme';
 import { LAN_URL } from '../../constansts/config';
 import api from '../../api/index';
-import Loading from '../../components/Loading/Loading'
 
 const lineEl = () => {
 
@@ -81,12 +80,13 @@ const Comic = () => {
         if (thumbStatus?.message && thumbStatus?.message?.includes('exist') && pageCount) {
             setThumb()
         } else {
+            console.log('setTimeOut')
             setTimeout(async () => {
                 let thumbStatus = await api.getHasThumbnails(arcid)
                 if (thumbStatus?.message && thumbStatus?.message?.includes('exist') && pageCount) {
                     setThumb()
                 }
-            }, 800)
+            }, 1200)
         }
     }
     const getComicMetaData = async () => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -10,20 +10,9 @@ import Config from './pages/Config/Config.tsx'
 import Comic from './pages/Comic/Comic.tsx';
 import Read from './pages/Read/Read.tsx'
 import ThumbList from './pages/ThumbList/ThumbList.tsx';
-import storage from './utils/storage.tsx';
-import { CONFIG_STORAGE_KEY } from './constansts/config.ts'
-import { setStoreAuth, setStoreIp, store } from './redux/redux.ts';
+import { ConfigContext, config as configData } from './context/ConfigContext.tsx';
 const Stack = createNativeStackNavigator<RootStackParamList>();
-storage.load({
-  key: CONFIG_STORAGE_KEY,
-}).then(res => {
-  console.log('storage----------', res)
-  store.dispatch(setStoreIp(res.ip))
-  store.dispatch(setStoreAuth(res.auth))
-}).catch(err => {
-  console.log(err)
-  console.log(store.getState())
-})
+
 function ReadScreen() {
   return (
     <SafeAreaView style={styles.main}>
@@ -65,16 +54,20 @@ function ThumbScreen() {
 }
 
 function App(): React.JSX.Element {
+  const [config, setConfig] = useState(configData)
   return (
-    <NavigationContainer >
-      <Stack.Navigator>
-        <Stack.Screen options={{ headerShown: false }} name="Home" component={HomeScreen} />
-        <Stack.Screen options={{ headerShown: false }} name='Config' component={ConfigScreen} />
-        <Stack.Screen options={{ headerShown: false }} name='Comic' component={ComicScreen} />
-        <Stack.Screen options={{ headerShown: false }} name='Read' component={ReadScreen} />
-        <Stack.Screen options={{ headerShown: false }} name='Thumbs' component={ThumbList} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ConfigContext.Provider value={{ config, setConfig }}>
+      <NavigationContainer >
+        <Stack.Navigator>
+          <Stack.Screen options={{ headerShown: false }} name="Home" component={HomeScreen} />
+          <Stack.Screen options={{ headerShown: false }} name='Config' component={ConfigScreen} />
+          <Stack.Screen options={{ headerShown: false }} name='Comic' component={ComicScreen} />
+          <Stack.Screen options={{ headerShown: false }} name='Read' component={ReadScreen} />
+          <Stack.Screen options={{ headerShown: false }} name='Thumbs' component={ThumbList} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </ConfigContext.Provider>
+
 
   );
 }

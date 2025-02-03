@@ -39,3 +39,8 @@ declare interface progressResponseType {
     page:number,
     success:number
 }
+
+declare interface IConfig {
+    ip: string,
+    auth: string
+}

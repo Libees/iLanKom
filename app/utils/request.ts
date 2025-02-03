@@ -1,8 +1,7 @@
-import axios, { Axios } from "axios"
-import { Alert } from "react-native"
+import axios from "axios"
 import { CONFIG_STORAGE_KEY, LAN_URL } from "../constansts/config"
 import { isValidIP } from "./utils"
-import { store } from '../redux/redux';
+import storage from "./storage";
 const request = axios.create({
     timeout: 1000,
     baseURL: LAN_URL,
@@ -12,7 +11,9 @@ const request = axios.create({
 })
 
 request.interceptors.request.use(async (request) => {
-    const config  = store.getState()
+    const config  = await storage.load({
+        key: CONFIG_STORAGE_KEY,
+      })
     console.log('config=======',config)
     if(!config?.ip) {
         throw Promise.reject({error:{text:'服务器地址不能为空',code: -1}})
@@ -27,6 +28,7 @@ request.interceptors.request.use(async (request) => {
 
 request.interceptors.response.use((response) => {
     const {data,status} = response
+    console.log('response',response)
     if(status === 200) return data
     return data
 })

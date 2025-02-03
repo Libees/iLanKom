@@ -84,12 +84,10 @@ const Read = () => {
 
         if (scrollToIndex !== null && listRef.current && comicPages && comicPages.length > 0) {
             console.log('useEffect------------------------1')
-            console.log('scrollToIndex', scrollToIndex, listRef.current)
             setTimeout(() => {
-
+                scrollToItem(scrollToIndex)
             }, 100)
             setScrollToIndex(null); // 滚动后重置，防止重复滚动
-            scrollToItem(scrollToIndex)
             console.log('useEffect------------------------2')
 
         }
