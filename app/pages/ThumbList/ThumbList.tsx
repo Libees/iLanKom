@@ -1,10 +1,12 @@
 import { View, Text, FlatList, Image, TouchableOpacity } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import { RouteProp, useNavigation, useRoute, NavigationProp } from '@react-navigation/native'
 import { LAN_URL } from '../../constansts/config'
 import { theme } from '../../constansts/theme'
 import { hp, wp } from '../../utils/utils'
+import { ConfigContext } from '../../context/ConfigContext.tsx';
 const ThumbList = () => {
+    const { config, setConfig } = useContext(ConfigContext)!
     const nav = useNavigation<NavigationProp<RootStackParamList>>()
     const route = useRoute<RouteProp<RootStackParamList, 'Thumbs'>>()
     const [thumbList, setThumbList] = useState<string[]>()
@@ -13,7 +15,7 @@ const ThumbList = () => {
     function geneThumbList(arcid: string, pageCount: number) {
         const temp: string[] = []
         for (let i = 0; i < pageCount; i++) {
-            temp.push(`${LAN_URL}/api/archives/${arcid}/thumbnail?page=${i + 1}`)
+            temp.push(`http://${config.ip}/api/archives/${arcid}/thumbnail?page=${i + 1}`)
         }
         console.log(temp)
         return temp

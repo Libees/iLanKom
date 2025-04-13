@@ -9,13 +9,10 @@ import { theme } from '../../constansts/theme';
 import ComicCard from './components/ComicCard/ComicCard';
 import SearchInput from './components/SearchInput/SearchInput';
 import Loading from './components/Loading/Loading';
-import Empty from './components/Empty/Empty';
-import { LAN_URL } from '../../constansts/config';
 import { formatSize, hp, wp } from '../../utils/utils';
-import { store, setConfig } from '../../redux/redux';
 import { CONFIG_STORAGE_KEY } from '../../constansts/config.ts'
 import storage from '../../utils/storage';
-import { config, ConfigContext } from '../../context/ConfigContext.tsx';
+import { ConfigContext } from '../../context/ConfigContext.tsx';
 
 
 const Home = () => {
@@ -35,7 +32,7 @@ const Home = () => {
     return comicList.map(comic => {
       return {
         ...comic,
-        thumbnail: `${LAN_URL}/api/archives/${comic.arcid}/thumbnail`,
+        thumbnail: `http://${config.ip}/api/archives/${comic.arcid}/thumbnail`,
         noThumbnail: require('../../assets/images/noThumb.png'),
         sizeText: formatSize(comic.size),
       }
@@ -74,7 +71,6 @@ const Home = () => {
       console.log('fetchComic', filter, start)
       setLoading(true)
       const res = await api.fetchSearch(filter, start)
-      console.log('fetchComic', res.data)
       const temp = handleComicList(res.data)
       isPageEnd.current = (start + temp.length) >= res.recordsFiltered
       console.log('isPageEnd', isPageEnd)
@@ -82,7 +78,6 @@ const Home = () => {
       startRef.current = startRef.current + 100
       setComicList([...comicList, ...temp])
     } catch (e) {
-      console.log('xxxxx', e)
       setHasMore(false)
       setComicList([])
     } finally {

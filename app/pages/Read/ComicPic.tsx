@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Image, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { wp, hp, deviceHeight } from '../../utils/utils'
+import { wp, hp, deviceWidth, deviceHeight } from '../../utils/utils'
 import { theme } from '../../constansts/theme'
 enum PicStatus {
     init = 'init',
@@ -8,6 +8,11 @@ enum PicStatus {
     error = 'error'
 }
 const ComicPic: React.FC<{ page: string }> = ({ page }) => {
+    const [dimensions, setDimensions] = useState({
+        width: deviceWidth,
+        height: deviceHeight // 默认正方形占位
+    });
+
     const [isLoading, setIsLoading] = useState(true);
     const errorPic = require('../../assets/images/pic_error.png')
     const [pageSource, setPageSource] = useState({
@@ -19,17 +24,24 @@ const ComicPic: React.FC<{ page: string }> = ({ page }) => {
         setIsLoading(false)
         setPageSource(errorPic)
     }
-    const handleOnLoad = () => {
+    const handleOnLoad = (event: { nativeEvent: { source: { width: any; height: any } } }) => {
+        const { width, height } = event.nativeEvent.source;
         setPicStatus(PicStatus.success)
         setIsLoading(false)
+        setDimensions({
+            width: deviceWidth,
+            height: height * (deviceWidth / width)
+        });
     }
+
     return (
         <View style={comicPicStyle.main} >
             {<Image
-                style={comicPicStyle.pic}
+                style={[comicPicStyle.pic, dimensions]}
                 source={pageSource}
                 onError={handleOnError}
                 onLoad={handleOnLoad}
+                progressiveRenderingEnabled={true}
                 resizeMode='contain'
                 alt='漫画'></Image>}
             {isLoading && ( // 根据 isLoading 状态显示加载指示器
@@ -42,14 +54,10 @@ const ComicPic: React.FC<{ page: string }> = ({ page }) => {
 }
 const comicPicStyle = StyleSheet.create({
     main: {
-        height: hp(65),
-        width: wp(100),
-        borderWidth: 1,
-        borderStyle: 'solid',
     },
     pic: {
-        height: '100%',
         width: '100%',
+        marginBottom: 4
     },
     loadingContainer: {
         position: 'absolute', // 使加载指示器覆盖在图片上方

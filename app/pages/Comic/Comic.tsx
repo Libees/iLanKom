@@ -1,15 +1,15 @@
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import { NavigationProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import ThumbItem from './Components/ThumbItem/ThumbItem';
 import { hp, wp, formatTimeStamp, parseKeyValueString, formatSize } from '../../utils/utils';
 import { theme } from '../../constansts/theme';
-import { LAN_URL } from '../../constansts/config';
+import { ConfigContext } from '../../context/ConfigContext.tsx';
 import api from '../../api/index';
 
-const lineEl = () => {
 
+const lineEl = () => {
     return (
         <View style={{ justifyContent: 'center', alignItems: 'center' }}>
             <View style={{ backgroundColor: theme.colors.line, height: 1, width: wp(90) }}></View>
@@ -66,6 +66,8 @@ const Comic = () => {
     const [loading, setLoading] = useState(true)
     const [comicMetadata, setComicMetadata] = useState<Comic | null>(null)
     const [thumbnailList, setThumbnailList] = useState<string[]>([])
+    const { config, setConfig } = useContext(ConfigContext)!
+
     const geneThumbList = async (arcid: string, pageCount: number) => {
         if (!pageCount) return []
         let thumbStatus = await api.getHasThumbnails(arcid)
@@ -73,7 +75,7 @@ const Comic = () => {
             let temp: string[] = []
             pageCount = pageCount > 20 ? 20 : pageCount
             for (let i = 0; i < pageCount; i++) {
-                temp.push(`${LAN_URL}/api/archives/${arcid}/thumbnail?page=${i + 1}`)
+                temp.push(`http://${config.ip}/api/archives/${arcid}/thumbnail?page=${i + 1}`)
             }
             setThumbnailList(temp)
         }
@@ -91,13 +93,12 @@ const Comic = () => {
     }
     const getComicMetaData = async () => {
         try {
-
             api.getComicMetadata(arcid).then(res => {
                 if (!res) return
                 const temp = {
                     ...res,
                     tagsMap: res.tags ? parseKeyValueString(res.tags) : null,
-                    thumbnail: `${LAN_URL}/api/archives/${res.arcid}/thumbnail`,
+                    thumbnail: `http://${config.ip}/api/archives/${res.arcid}/thumbnail`,
 
                 }
                 geneThumbList(arcid, temp.pagecount as number)

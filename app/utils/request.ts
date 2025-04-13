@@ -1,10 +1,9 @@
 import axios from "axios"
-import { CONFIG_STORAGE_KEY, LAN_URL } from "../constansts/config"
+import { CONFIG_STORAGE_KEY } from "../constansts/config"
 import { isValidIP } from "./utils"
 import storage from "./storage";
 const request = axios.create({
     timeout: 1000,
-    baseURL: LAN_URL,
     headers: {
         'Content-Type': 'application/json',
     }
@@ -28,7 +27,6 @@ request.interceptors.request.use(async (request) => {
 
 request.interceptors.response.use((response) => {
     const {data,status} = response
-    console.log('response',response)
     if(status === 200) return data
     return data
 })

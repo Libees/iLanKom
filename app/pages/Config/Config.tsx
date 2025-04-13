@@ -1,12 +1,11 @@
 import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native'
-import React, { ReactElement, useContext, useEffect } from 'react'
-import { useState, useRef } from 'react'
+import React, { useContext, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import Line from '../../components/Line/Line'
 import LModal from './components/LModal'
 import { hp } from '../../utils/utils'
 import { theme } from '../../constansts/theme'
-import { setConfig, store } from '../../redux/redux'
 import storage from '../../utils/storage'
 import { CONFIG_STORAGE_KEY } from '../../constansts/config'
 import { ConfigContext } from '../../context/ConfigContext'
@@ -55,53 +54,9 @@ const ipConfig = (props: string) => {
         onComfireIpConfig
     }
 }
-const authConfig = () => {
-    const { config, setConfig } = useContext(ConfigContext)!
-    const [auth, setAuth] = useState(config.auth)
-    const [authInfo, setAuthInfo] = useState('')
-    const [authConfigVisible, setAuthConfigVisible] = useState(false)
-    useEffect(() => {
-        handleSetAuth()
-    }, [])
-
-    const handleSetAuth = () => {
-        setAuthInfo(auth ? auth : '点击输入密钥')
-    }
-    const changeAuthConfig = (value: string) => {
-        setAuth(value)
-    }
-    const onOpenAuthConfig = () => {
-        setAuthConfigVisible(true)
-    }
-    const onCloseAuthConfig = () => {
-        setAuthConfigVisible(false)
-    }
-    const onComfireAuthConfig = () => {
-        let config = { ...store.getState() }
-        config.auth = auth
-        storage.save({
-            key: CONFIG_STORAGE_KEY,
-            data: config
-        }).then(() => {
-            store.dispatch(setConfig(config))
-        })
-        handleSetAuth()
-        onCloseAuthConfig()
-    }
-    return {
-        auth,
-        authInfo,
-        authConfigVisible,
-        onOpenAuthConfig,
-        onCloseAuthConfig,
-        onComfireAuthConfig,
-        changeAuthConfig
-    }
-}
 const Config = () => {
     const navigation = useNavigation();
     const { onCloseIpConfig, onOpenIpConfig, onComfireIpConfig, changeIpConfig, ipConfigVisble, ip, ipInfo } = ipConfig()
-    const { auth, authInfo, authConfigVisible, onOpenAuthConfig, onCloseAuthConfig, onComfireAuthConfig, changeAuthConfig } = authConfig()
     return (
         <View>
             <View style={styles.header}>
@@ -116,15 +71,15 @@ const Config = () => {
             <View style={{ marginTop: 10 }}>
                 <Line ></Line>
             </View>
-            <View style={styles.item} >
+            {/* <View style={styles.item} >
                 <TouchableOpacity onPress={onOpenAuthConfig}>
                     <Text style={styles.title}>API密钥</Text>
                     <Text style={styles.info}>{authInfo}</Text>
                 </TouchableOpacity>
-            </View>
-            <View style={{ marginTop: 10 }}>
+            </View> */}
+            {/* <View style={{ marginTop: 10 }}>
                 <Line ></Line>
-            </View>
+            </View> */}
             <LModal visible={ipConfigVisble} onClose={onCloseIpConfig}>
                 <View>
                     <Text >服务器地址</Text>
@@ -134,20 +89,6 @@ const Config = () => {
                             <Text style={styles.cancle}>取消</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={onComfireIpConfig}>
-                            <Text style={styles.comfire}>确定</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </LModal>
-            <LModal visible={authConfigVisible} onClose={onCloseAuthConfig}>
-                <View>
-                    <Text >API密钥</Text>
-                    <TextInput value={auth} onChangeText={value => { changeAuthConfig(value) }} placeholder='请输入API密钥' style={styles.input} ></TextInput>
-                    <View style={styles.footer}>
-                        <TouchableOpacity onPress={onCloseAuthConfig}>
-                            <Text style={styles.cancle}>取消</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={onComfireAuthConfig}>
                             <Text style={styles.comfire}>确定</Text>
                         </TouchableOpacity>
                     </View>

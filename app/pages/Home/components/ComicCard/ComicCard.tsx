@@ -1,7 +1,6 @@
 import { View, Text, Image, StyleSheet } from 'react-native';
 import React from 'react';
 import { NativeSyntheticEvent, ImageErrorEventData } from 'react-native';
-import { LAN_URL } from '../../../../constansts/config';
 import { theme } from '../../../../constansts/theme';
 import { hp, parseKeyValueString } from '../../../../utils/utils';
 const ComicCard = ({ comic }: { comic: Comic }) => {
@@ -46,12 +45,12 @@ const styles = StyleSheet.create({
     padding: 2
   },
   title: {
-    fontSize: hp(1.6),
+    fontSize: hp(1.62),
     color: theme.colors.textD
   },
   info: {
     color: theme.colors.info,
-    fontSize: hp(1.2),
+    fontSize: hp(1.5),
     marginTop: 3
   }
 })

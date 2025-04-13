@@ -1,12 +1,12 @@
 import { View, ScrollView, StyleSheet, Text, VirtualizedList, NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
-import React, { useEffect, useState, useRef, useCallback, ReactElement } from 'react'
+import React, { useEffect, useState, useRef, useContext } from 'react'
 import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native'
 import ComicPic from './ComicPic'
 import api from '../../api/index'
 import { LAN_URL } from '../../constansts/config'
 import { ViewToken } from 'react-native'
 import { hp } from '../../utils/utils'
-
+import { ConfigContext } from '../../context/ConfigContext.tsx';
 interface pageType {
     pageIndex: number,
     isVisit: boolean,
@@ -15,6 +15,7 @@ interface pageType {
 }
 
 const Read = () => {
+    const { config, setConfig } = useContext(ConfigContext)!
     const route = useRoute<RouteProp<RootStackParamList, 'Read'>>()
     const params = route.params
     const arcid = params?.arcid || ''
@@ -29,7 +30,7 @@ const Read = () => {
             if (res.pages.length === 0) return
             pageCount.current = res.pages.length
             setComicPages(res.pages.map(page => {
-                return `${LAN_URL}${page}`
+                return `http://${config.ip}${page}`
             }))
             setScrollToIndex(params.page as number)
         })
@@ -41,8 +42,8 @@ const Read = () => {
         if (listRef.current) {
             listRef.current?.scrollToIndex({
                 animated: false,      // 是否使用动画，默认为 true
-                index: page - 1,        // 要滚动到的索引
-                viewPosition: 0.5,   // 视图位置，0: 顶部, 1: 底部, 0.5: 中间，默认为 
+                index: page - 1,      // 要滚动到的索引
+                viewPosition: 0.5,    // 视图位置，0: 顶部, 1: 底部, 0.5: 中间，默认为 
             });
         }
     };
